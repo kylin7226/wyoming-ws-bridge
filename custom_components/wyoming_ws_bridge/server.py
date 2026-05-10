@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -113,6 +114,7 @@ class VLLMHandler:
         # Streaming TTS state
         self._tts_session_id: str | None = None
         self._tts_text = ""
+        self._tts_voice: str = "default"
 
     async def run(self) -> None:
         """Main event loop for this client connection."""
@@ -238,7 +240,7 @@ class VLLMHandler:
 
     async def _handle_tts(self, request: Synthesize) -> None:
         """Handle a non-streaming TTS request from HA."""
-        session_id = self._config.get("session_id", "local")
+        session_id = uuid.uuid4().hex[:8]
 
         if not self._check_concurrency(session_id):
             await self._send_event(
@@ -319,8 +321,9 @@ class VLLMHandler:
                 ).event()
             )
             return
-        self._tts_session_id = self._config.get("session_id", "local")
+        self._tts_session_id = uuid.uuid4().hex[:8]
         self._tts_text = ""
+        self._tts_voice = request.voice.name if request.voice else "default"
 
         if not self._check_concurrency(self._tts_session_id):
             await self._send_event(
@@ -372,6 +375,7 @@ class VLLMHandler:
             async for chunk in self._vllm.stream_tts(
                 text=text,
                 model=model,
+                voice=self._tts_voice,
                 sample_rate=sample_rate,
             ):
                 if isinstance(chunk, bytes):
@@ -427,7 +431,7 @@ class VLLMHandler:
                 pass
             self._audio_started.clear()
 
-        self._session_id = self._config.get("session_id", "local")
+        self._session_id = uuid.uuid4().hex[:8]
 
         if not self._check_concurrency(self._session_id):
             await self._send_event(

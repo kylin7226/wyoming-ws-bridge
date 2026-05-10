@@ -6,12 +6,16 @@
         "description": "Choose the voice service this instance will provide. Each instance provides only one service. Add multiple instances for both TTS and STT.",
         "data": {
           "service_type": "Service type"
+        },
+        "data_description": {
+          "service_type": "TTS synthesizes speech from text. STT recognizes text from audio."
         }
       },
       "settings": {
         "title": "Connection & Service Settings",
         "description": "Configure vLLM connection, performance parameters, and settings for the selected service.",
         "data": {
+          "name": "Instance name",
           "ws_url": "vLLM WebSocket URL",
           "connect_timeout": "Connection timeout (seconds)",
           "wyoming_host": "Wyoming TCP listen address",
@@ -46,10 +50,11 @@
       }
     },
     "error": {
-      "invalid_json_map": "Invalid JSON format for key map"
+      "invalid_json_map": "Invalid JSON format for key map",
+      "missing_service_type": "Service type is required"
     },
     "abort": {
-      "already_configured": "vLLM Wyoming WS Bridge is already configured"
+      "already_configured": "Wyoming WS Bridge is already configured"
     }
   },
   "options": {
@@ -58,6 +63,7 @@
         "title": "Configure Options",
         "description": "Modify connection and performance settings. Current service type: {service_type}.",
         "data": {
+          "name": "Instance name",
           "ws_url": "vLLM WebSocket URL",
           "connect_timeout": "Connection timeout (seconds)",
           "wyoming_host": "Wyoming TCP listen address",
