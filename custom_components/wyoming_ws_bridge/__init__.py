@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 
 from .const import (
@@ -41,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # ── Check for port conflicts ──────────────────────────────────────
     for existing in hass.config_entries.async_entries(DOMAIN):
-        if existing.entry_id == entry.entry_id or not existing.state.domain:
+        if existing.entry_id == entry.entry_id or existing.state is not ConfigEntryState.LOADED:
             continue
         existing_data = _merge_config(existing)
         if (
