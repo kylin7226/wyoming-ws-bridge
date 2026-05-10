@@ -81,8 +81,8 @@
   },
   "entity": {
     "binary_sensor": {
-      "vllm_status": {
-        "name": "vLLM Wyoming WS 状态",
+      "bridge_status": {
+        "name": "Wyoming WS 桥接状态",
         "state": {
           "on": "在线",
           "off": "离线或降级"

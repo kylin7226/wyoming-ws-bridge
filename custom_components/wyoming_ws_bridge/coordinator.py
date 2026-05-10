@@ -1,4 +1,4 @@
-"""Health probe coordinator for vLLM Wyoming WS Bridge."""
+"""Health probe coordinator for Wyoming WS Bridge."""
 
 from __future__ import annotations
 

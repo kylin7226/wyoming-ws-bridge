@@ -9,7 +9,7 @@
 ```
 HA Assist Pipeline (Wyoming Client)
         ↕ TCP 127.0.0.1:10300（本地异步事件驱动）
-[vllm_wyoming_ws 自定义实例] Wyoming Server（路由中心）
+[wyoming_ws_bridge 自定义实例] Wyoming Server（路由中心）
         ↕ WebSocket ws://<vllm-ip>:<port>/v1/audio/*（网络）
 vLLM / vLLM-Omni 0.20.0 推理服务器
 ```
@@ -35,8 +35,8 @@ vLLM / vLLM-Omni 0.20.0 推理服务器
 ### 方式 2：手动安装
 
 ```bash
-# 将此仓库的 custom_components/vllm_wyoming_ws 目录复制到
-# <ha_config_dir>/custom_components/vllm_wyoming_ws
+# 将此仓库的 custom_components/wyoming_ws_bridge 目录复制到
+# <ha_config_dir>/custom_components/wyoming_ws_bridge
 # 然后重启 Home Assistant
 ```
 
@@ -125,7 +125,7 @@ vLLM / vLLM-Omni 0.20.0 推理服务器
 
 ## 五、 健康状态实体
 
-每个实例自动创建独立的 `binary_sensor.vllm_wyoming_ws_status` 实体：
+每个实例自动创建独立的 `binary_sensor.wyoming_ws_bridge_status` 实体：
 
 | 属性 | 说明 |
 |------|------|
@@ -164,12 +164,12 @@ echo '{"model":"qwen3-tts","input":"你好","voice":"default","response_format":
 
 ```bash
 # 查看本组件日志（HA 容器内执行）
-docker logs homeassistant 2>&1 | grep -i "vllm_wyoming_ws"
+docker logs homeassistant 2>&1 | grep -i "wyoming_ws_bridge"
 
 # 或在 HA 的 configuration.yaml 中开启 DEBUG 级日志：
 # logger:
 #   logs:
-#     custom_components.vllm_wyoming_ws: debug
+#     custom_components.wyoming_ws_bridge: debug
 ```
 
 ---
@@ -205,7 +205,7 @@ docker logs homeassistant 2>&1 | grep -i "vllm_wyoming_ws"
 ## 八、 目录结构
 
 ```
-custom_components/vllm_wyoming_ws/
+custom_components/wyoming_ws_bridge/
 ├── __init__.py          # 入口：后台 TCP 服务器 + 健康探针 + 生命周期管理
 ├── binary_sensor.py     # 连通性传感器（vLLM 健康状态）
 ├── config_flow.py       # ConfigFlow（两步：选类型 → 配参数）+ OptionsFlow

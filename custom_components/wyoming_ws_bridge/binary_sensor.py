@@ -14,11 +14,11 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, HealthState
 from .coordinator import VLLMHealthCoordinator
-from . import VLLMWyomingConfigEntry
+from . import WyomingWSBridgeConfigEntry
 
 ENTITY_DESC = BinarySensorEntityDescription(
-    key="vllm_status",
-    name="vLLM Wyoming WS Status",
+    key="bridge_status",
+    name="Wyoming WS Bridge Status",
     device_class=BinarySensorDeviceClass.CONNECTIVITY,
     entity_category=EntityCategory.DIAGNOSTIC,
 )
@@ -26,7 +26,7 @@ ENTITY_DESC = BinarySensorEntityDescription(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: VLLMWyomingConfigEntry,
+    entry: WyomingWSBridgeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the binary sensor platform."""
@@ -42,7 +42,7 @@ class VLLMHealthSensor(CoordinatorEntity[VLLMHealthCoordinator], BinarySensorEnt
     def __init__(self, coordinator: VLLMHealthCoordinator, entry_id: str) -> None:
         super().__init__(coordinator)
         self.entity_description = ENTITY_DESC
-        self._attr_unique_id = f"{entry_id}_vllm_status"
+        self._attr_unique_id = f"{entry_id}_bridge_status"
 
     @property
     def is_on(self) -> bool:

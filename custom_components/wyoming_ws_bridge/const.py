@@ -1,10 +1,10 @@
-"""Constants for vLLM Wyoming WS Bridge."""
+"""Constants for Wyoming WS Bridge."""
 
 from __future__ import annotations
 
 from enum import StrEnum
 
-DOMAIN = "vllm_wyoming_ws"
+DOMAIN = "wyoming_ws_bridge"
 
 # ── Wyoming protocol ──────────────────────────────────────────────────────
 WYOMING_NAME = "vLLM Omni WS"

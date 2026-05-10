@@ -1,4 +1,4 @@
-"""Wyoming TCP server and session handler for vLLM Wyoming WS Bridge."""
+"""Wyoming TCP server and session handler for Wyoming WS Bridge."""
 
 from __future__ import annotations
 

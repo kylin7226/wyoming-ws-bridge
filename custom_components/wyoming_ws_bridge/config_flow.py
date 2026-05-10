@@ -1,4 +1,4 @@
-"""Config and options flow for vLLM Wyoming WS Bridge."""
+"""Config and options flow for Wyoming WS Bridge."""
 
 from __future__ import annotations
 
@@ -65,8 +65,8 @@ STEP_SERVICE_SCHEMA = vol.Schema(
 )
 
 
-class VLLMWyomingWSConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for vLLM Wyoming WS Bridge."""
+class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Wyoming WS Bridge."""
 
     VERSION = 1
 
@@ -124,7 +124,7 @@ class VLLMWyomingWSConfigFlow(ConfigFlow, domain=DOMAIN):
                     result[CONF_ENABLE_PARTIAL] = user_input[CONF_ENABLE_PARTIAL]
 
                 return self.async_create_entry(
-                    title=f"vLLM Wyoming WS ({self._service_type.upper()})",
+                    title=f"Wyoming WS Bridge ({self._service_type.upper()})",
                     data=result,
                 )
 
@@ -191,13 +191,13 @@ class VLLMWyomingWSConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: ConfigEntry,
-    ) -> VLLMWyomingWSOptionsFlow:
+    ) -> WyomingWSBridgeOptionsFlow:
         """Return the options flow handler."""
-        return VLLMWyomingWSOptionsFlow()
+        return WyomingWSBridgeOptionsFlow()
 
 
-class VLLMWyomingWSOptionsFlow(OptionsFlow):
-    """Handle options flow for vLLM Wyoming WS Bridge."""
+class WyomingWSBridgeOptionsFlow(OptionsFlow):
+    """Handle options flow for Wyoming WS Bridge."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

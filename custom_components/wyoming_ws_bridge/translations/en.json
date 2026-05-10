@@ -81,8 +81,8 @@
   },
   "entity": {
     "binary_sensor": {
-      "vllm_status": {
-        "name": "vLLM Wyoming WS Status",
+      "bridge_status": {
+        "name": "Wyoming WS Bridge Status",
         "state": {
           "on": "Online",
           "off": "Offline or degraded"

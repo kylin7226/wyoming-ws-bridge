@@ -1,4 +1,4 @@
-"""vLLM Wyoming WS Bridge integration."""
+"""Wyoming WS Bridge integration."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["binary_sensor"]
 
-type VLLMWyomingConfigEntry = ConfigEntry[dict[str, Any]]
+type WyomingWSBridgeConfigEntry = ConfigEntry[dict[str, Any]]
 
 
 def _merge_config(entry: ConfigEntry) -> dict[str, Any]:
@@ -35,7 +35,7 @@ def _merge_config(entry: ConfigEntry) -> dict[str, Any]:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up vLLM Wyoming WS Bridge from a config entry."""
+    """Set up Wyoming WS Bridge from a config entry."""
     config = _merge_config(entry)
     host = config.get(CONF_WYOMING_HOST, DEFAULT_WYOMING_HOST)
     port = config.get(CONF_WYOMING_PORT, DEFAULT_WYOMING_PORT)
@@ -101,7 +101,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.error("Failed to bind Wyoming server on %s:%d: %s", host, port, exc)
 
     # Start server as background task
-    task = hass.async_create_background_task(_start_server(), "vllm_wyoming_ws_server")
+    task = hass.async_create_background_task(_start_server(), "wyoming_ws_bridge_server")
     hass.data[DOMAIN][entry.entry_id]["server_task"] = task
 
     # Forward to sensor platform
