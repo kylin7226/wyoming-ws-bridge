@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select Service Type",
+        "description": "Choose the voice service this instance will provide. Each instance provides only one service. Add multiple instances for both TTS and STT.",
+        "data": {
+          "service_type": "Service type"
+        },
+        "data_description": {
+          "service_type": "TTS synthesizes speech from text. STT recognizes text from audio."
+        }
+      },
+      "settings": {
+        "title": "Connection & Service Settings",
+        "description": "Configure vLLM connection, performance parameters, and settings for the selected service.",
+        "data": {
+          "ws_url": "vLLM WebSocket URL",
+          "connect_timeout": "Connection timeout (seconds)",
+          "wyoming_host": "Wyoming TCP listen address",
+          "wyoming_port": "Wyoming TCP listen port",
+          "tts_model": "TTS model name",
+          "output_sample_rate": "TTS output sample rate (Hz)",
+          "stt_model": "STT model name",
+          "enable_partial": "Enable partial STT results",
+          "max_concurrent": "Max concurrent sessions",
+          "audio_buffer_size": "Audio buffer queue depth",
+          "json_key_map": "JSON key map (override default vLLM keys)",
+          "health_mode": "Health check mode",
+          "health_interval": "Health check interval (seconds)",
+          "failure_threshold": "Failure threshold before offline"
+        },
+        "data_description": {
+          "ws_url": "Base WebSocket URL of the vLLM server, e.g. ws://192.168.1.100:8000/v1",
+          "connect_timeout": "Timeout in seconds for WebSocket handshake",
+          "wyoming_host": "IP address to bind the Wyoming TCP server (0.0.0.0 for all interfaces)",
+          "wyoming_port": "TCP port for the Wyoming server (HA Assist Pipeline connects here)",
+          "tts_model": "Model name registered in vLLM for text-to-speech",
+          "output_sample_rate": "Audio sample rate for TTS output, must match HA player",
+          "stt_model": "Model name registered in vLLM for speech-to-text",
+          "enable_partial": "Stream partial STT results as they become available",
+          "max_concurrent": "Maximum number of simultaneous voice sessions",
+          "audio_buffer_size": "Depth of the audio chunk queue for STT backpressure",
+          "json_key_map": "JSON object to override default vLLM request/response keys",
+          "health_mode": "Use WS handshake test or HTTP GET /v1/models for health checks",
+          "health_interval": "Seconds between consecutive health probes",
+          "failure_threshold": "Number of consecutive failures before marking offline"
+        }
+      }
+    },
+    "error": {
+      "invalid_json_map": "Invalid JSON format for key map",
+      "missing_service_type": "Service type is required"
+    },
+    "abort": {
+      "already_configured": "Wyoming WS Bridge is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Options",
+        "description": "Modify connection and performance settings. Current service type: {service_type}.",
+        "data": {
+          "ws_url": "vLLM WebSocket URL",
+          "connect_timeout": "Connection timeout (seconds)",
+          "wyoming_host": "Wyoming TCP listen address",
+          "wyoming_port": "Wyoming TCP listen port",
+          "tts_model": "TTS model name",
+          "output_sample_rate": "TTS output sample rate (Hz)",
+          "stt_model": "STT model name",
+          "enable_partial": "Enable partial STT results",
+          "max_concurrent": "Max concurrent sessions",
+          "audio_buffer_size": "Audio buffer queue depth",
+          "json_key_map": "JSON key map (override default vLLM keys)",
+          "health_mode": "Health check mode",
+          "health_interval": "Health check interval (seconds)",
+          "failure_threshold": "Failure threshold before offline"
+        }
+      }
+    },
+    "error": {
+      "invalid_json_map": "Invalid JSON format for key map"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "bridge_status": {
+        "name": "Wyoming WS Bridge Status",
+        "state": {
+          "on": "Online",
+          "off": "Offline or degraded"
+        }
+      }
+    }
+  }
+}

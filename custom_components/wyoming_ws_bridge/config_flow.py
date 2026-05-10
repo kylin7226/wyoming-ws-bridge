@@ -50,14 +50,6 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_TTS = "tts"
 SERVICE_STT = "stt"
 
-STEP_SERVICE_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_SERVICE_TYPE, default=SERVICE_TTS): vol.In(
-            [SERVICE_TTS, SERVICE_STT]
-        ),
-    }
-)
-
 
 class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Wyoming WS Bridge."""
@@ -72,15 +64,29 @@ class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Step 1: choose service type (TTS or STT)."""
         if user_input is not None:
-            self._service_type = user_input.get(CONF_SERVICE_TYPE, SERVICE_TTS)
+            try:
+                self._service_type = user_input[CONF_SERVICE_TYPE]
+                _LOGGER.debug("User selected service_type=%s", self._service_type)
+            except KeyError:
+                _LOGGER.error("Missing service_type in user_input: %s", user_input)
+                return self.async_abort(reason="missing_service_type")
             return await self.async_step_settings()
+
+        schema = vol.Schema({
+            vol.Required(CONF_SERVICE_TYPE, default=SERVICE_TTS): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        selector.SelectOptionDict(value=SERVICE_TTS, label="TTS"),
+                        selector.SelectOptionDict(value=SERVICE_STT, label="STT"),
+                    ],
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            ),
+        })
 
         return self.async_show_form(
             step_id="user",
-            data_schema=STEP_SERVICE_SCHEMA,
-            description_placeholders={
-                "info": "Choose the voice service this instance will provide. Each instance provides only one service.",
-            },
+            data_schema=schema,
         )
 
     async def async_step_settings(

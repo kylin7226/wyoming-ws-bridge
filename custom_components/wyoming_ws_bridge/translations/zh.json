@@ -49,7 +49,7 @@
       "invalid_json_map": "键名映射 JSON 格式无效"
     },
     "abort": {
-      "already_configured": "vLLM Wyoming WS 桥接已配置"
+      "already_configured": "Wyoming WS 桥接已配置"
     }
   },
   "options": {
