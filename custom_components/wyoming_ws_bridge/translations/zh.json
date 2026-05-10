@@ -6,6 +6,9 @@
         "description": "选择此实例要提供的语音服务。每个实例仅提供一种服务，可多次添加以分别配置 TTS 和 STT。",
         "data": {
           "service_type": "服务类型"
+        },
+        "data_description": {
+          "service_type": "TTS 将文字合成为语音，STT 将语音识别为文字。"
         }
       },
       "settings": {
@@ -46,7 +49,8 @@
       }
     },
     "error": {
-      "invalid_json_map": "键名映射 JSON 格式无效"
+      "invalid_json_map": "键名映射 JSON 格式无效",
+      "missing_service_type": "请选择服务类型"
     },
     "abort": {
       "already_configured": "Wyoming WS 桥接已配置"
