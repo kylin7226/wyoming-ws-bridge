@@ -19,8 +19,8 @@ from wyoming.info import (
     TtsVoice,
 )
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
-from wyoming.tts import StreamingTtsRequest, TtsStreamingStopped
-from wyoming.stt import StreamingSttRequest, StreamingSttStop, SttStreamingStopped, Transcript, TextChunk
+from wyoming.tts import Synthesize, SynthesizeStart, SynthesizeChunk, SynthesizeStop, SynthesizeStopped
+from wyoming.asr import Transcribe, Transcript, TranscriptStart, TranscriptChunk, TranscriptStop
 from wyoming.error import Error
 
 from .const import (
@@ -110,6 +110,9 @@ class VLLMHandler:
         self._stt_rate: int = 16000
         # Signal that AudioStart has been received (for STT rate sync)
         self._audio_started = asyncio.Event()
+        # Streaming TTS state
+        self._tts_session_id: str | None = None
+        self._tts_text = ""
 
     async def run(self) -> None:
         """Main event loop for this client connection."""
@@ -178,34 +181,39 @@ class VLLMHandler:
     async def _handle_event(self, event: Event) -> None:
         """Dispatch a Wyoming event to the appropriate handler."""
         service_type = self._config.get(CONF_SERVICE_TYPE, "tts")
-        if StreamingTtsRequest.is_type(event):
+        # TTS events
+        if Synthesize.is_type(event.type):
             if service_type != "tts":
                 await self._send_event(
-                    Error(
-                        code="service_disabled",
-                        message="TTS is not enabled on this instance",
-                    ).event()
+                    Error(code="service_disabled", message="TTS is not enabled on this instance").event()
                 )
                 return
-            await self._handle_tts(StreamingTtsRequest.from_event(event))
-        elif StreamingSttRequest.is_type(event):
+            await self._handle_tts(Synthesize.from_event(event))
+        elif SynthesizeStart.is_type(event.type):
+            if service_type != "tts":
+                await self._send_event(
+                    Error(code="service_disabled", message="TTS is not enabled on this instance").event()
+                )
+                return
+            await self._handle_tts_start(SynthesizeStart.from_event(event))
+        elif SynthesizeChunk.is_type(event.type):
+            await self._handle_tts_chunk(SynthesizeChunk.from_event(event))
+        elif SynthesizeStop.is_type(event.type):
+            await self._handle_tts_stop()
+        # STT events
+        elif Transcribe.is_type(event.type):
             if service_type != "stt":
                 await self._send_event(
-                    Error(
-                        code="service_disabled",
-                        message="STT is not enabled on this instance",
-                    ).event()
+                    Error(code="service_disabled", message="STT is not enabled on this instance").event()
                 )
                 return
-            await self._handle_stt_start(StreamingSttRequest.from_event(event))
+            await self._handle_stt_start(Transcribe.from_event(event))
         elif AudioStart.is_type(event):
             await self._handle_audio_start(AudioStart.from_event(event))
         elif AudioChunk.is_type(event):
             await self._handle_audio_chunk(AudioChunk.from_event(event))
         elif AudioStop.is_type(event):
             await self._handle_audio_stop()
-        elif StreamingSttStop.is_type(event):
-            await self._handle_stt_stop()
         elif event.type == "info":
             await self._send_event(build_info_response(self._config).event())
         else:
@@ -228,28 +236,26 @@ class VLLMHandler:
 
     # ── TTS handling ───────────────────────────────────────────────
 
-    async def _handle_tts(self, request: StreamingTtsRequest) -> None:
-        """Handle a TTS streaming request from HA."""
-        self._session_id = request.session_id
+    async def _handle_tts(self, request: Synthesize) -> None:
+        """Handle a non-streaming TTS request from HA."""
+        session_id = self._config.get("session_id", "local")
 
-        if not self._check_concurrency(request.session_id):
+        if not self._check_concurrency(session_id):
             await self._send_event(
                 Error(
                     code="max_concurrent_reached",
                     message="Too many concurrent sessions",
-                    session_id=request.session_id,
                 ).event()
             )
             return
 
         model = self._config.get(CONF_TTS_MODEL, DEFAULT_TTS_MODEL)
-        voice = request.voice or "default"
+        voice = request.voice.name if request.voice else "default"
         sample_rate = self._config.get(CONF_OUTPUT_SAMPLE_RATE, DEFAULT_OUTPUT_SAMPLE_RATE)
         json_key_map = self._config.get(CONF_JSON_KEY_MAP)
 
         _LOGGER.info(
-            "TTS request session=%s text_len=%d model=%s",
-            request.session_id,
+            "TTS request text_len=%d model=%s",
             len(request.text),
             model,
         )
@@ -270,11 +276,7 @@ class VLLMHandler:
             ):
                 if isinstance(chunk, bytes):
                     await self._send_event(
-                        AudioChunk(
-                            audio=chunk,
-                            rate=sample_rate,
-                            session_id=request.session_id,
-                        ).event()
+                        AudioChunk(audio=chunk, rate=sample_rate).event()
                     )
                 elif isinstance(chunk, dict):
                     status = chunk.get("status", "")
@@ -283,70 +285,167 @@ class VLLMHandler:
                             Error(
                                 code="vllm_error",
                                 message=json.dumps(chunk),
-                                session_id=request.session_id,
                             ).event()
                         )
                     break
 
-            await self._send_event(
-                TtsStreamingStopped(session_id=request.session_id).event()
-            )
-            _LOGGER.debug("TTS streaming complete for session %s", request.session_id)
+            await self._send_event(SynthesizeStopped().event())
+            _LOGGER.debug("TTS streaming complete")
 
         except (TimeoutError, asyncio.TimeoutError):
-            _LOGGER.error("TTS timeout for session %s", request.session_id)
+            _LOGGER.error("TTS timeout")
             await self._send_event(
-                Error(
-                    code="vllm_timeout",
-                    message="vLLM TTS request timed out",
-                    session_id=request.session_id,
-                ).event()
+                Error(code="vllm_timeout", message="vLLM TTS request timed out").event()
             )
         except Exception:
-            _LOGGER.exception("TTS error for session %s", request.session_id)
+            _LOGGER.exception("TTS error")
             await self._send_event(
-                Error(
-                    code="vllm_error",
-                    message="vLLM TTS error",
-                    session_id=request.session_id,
-                ).event()
+                Error(code="vllm_error", message="vLLM TTS error").event()
             )
         finally:
             if self._vllm:
                 await self._vllm.close()
                 self._vllm = None
-            if request.session_id in _active_sessions:
-                del _active_sessions[request.session_id]
+            if session_id in _active_sessions:
+                del _active_sessions[session_id]
 
-    # ── STT handling ───────────────────────────────────────────────
+    async def _handle_tts_start(self, request: SynthesizeStart) -> None:
+        """Handle start of streaming TTS request."""
+        if self._tts_session_id is not None:
+            await self._send_event(
+                Error(
+                    code="session_busy",
+                    message="TTS session already active",
+                ).event()
+            )
+            return
+        self._tts_session_id = self._config.get("session_id", "local")
+        self._tts_text = ""
 
-    async def _handle_stt_start(self, request: StreamingSttRequest) -> None:
-        """Handle STT session start."""
-        self._session_id = request.session_id
-
-        if not self._check_concurrency(request.session_id):
+        if not self._check_concurrency(self._tts_session_id):
             await self._send_event(
                 Error(
                     code="max_concurrent_reached",
                     message="Too many concurrent sessions",
-                    session_id=request.session_id,
+                ).event()
+            )
+            self._tts_session_id = None
+            return
+
+        _LOGGER.debug("TTS streaming session started")
+
+    async def _handle_tts_chunk(self, chunk: SynthesizeChunk) -> None:
+        """Accumulate text from streaming TTS."""
+        if self._tts_session_id is None:
+            return
+        self._tts_text += chunk.text
+
+    async def _handle_tts_stop(self) -> None:
+        """Handle end of streaming TTS, trigger synthesis."""
+        if self._tts_session_id is None:
+            return
+
+        session_id = self._tts_session_id
+        text = self._tts_text
+        self._tts_session_id = None
+        self._tts_text = ""
+
+        if not text:
+            if session_id in _active_sessions:
+                del _active_sessions[session_id]
+            return
+
+        model = self._config.get(CONF_TTS_MODEL, DEFAULT_TTS_MODEL)
+        sample_rate = self._config.get(CONF_OUTPUT_SAMPLE_RATE, DEFAULT_OUTPUT_SAMPLE_RATE)
+        json_key_map = self._config.get(CONF_JSON_KEY_MAP)
+
+        _LOGGER.info("TTS streaming text_len=%d model=%s", len(text), model)
+
+        try:
+            self._vllm = VLLMClient(
+                ws_url=self._config[CONF_WS_URL],
+                connect_timeout=self._config.get(CONF_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT),
+                json_key_map=json_key_map,
+            )
+            await self._vllm.connect("/v1/audio/speech")
+
+            async for chunk in self._vllm.stream_tts(
+                text=text,
+                model=model,
+                sample_rate=sample_rate,
+            ):
+                if isinstance(chunk, bytes):
+                    await self._send_event(
+                        AudioChunk(audio=chunk, rate=sample_rate).event()
+                    )
+                elif isinstance(chunk, dict):
+                    status = chunk.get("status", "")
+                    if status == "error":
+                        await self._send_event(
+                            Error(
+                                code="vllm_error",
+                                message=json.dumps(chunk),
+                            ).event()
+                        )
+                    break
+
+            await self._send_event(SynthesizeStopped().event())
+            _LOGGER.debug("TTS streaming complete")
+
+        except (TimeoutError, asyncio.TimeoutError):
+            _LOGGER.error("TTS timeout")
+            await self._send_event(
+                Error(code="vllm_timeout", message="vLLM TTS request timed out").event()
+            )
+        except Exception:
+            _LOGGER.exception("TTS error")
+            await self._send_event(
+                Error(code="vllm_error", message="vLLM TTS error").event()
+            )
+        finally:
+            if self._vllm:
+                await self._vllm.close()
+                self._vllm = None
+            if session_id in _active_sessions:
+                del _active_sessions[session_id]
+
+    # ── STT handling ───────────────────────────────────────────────
+
+    async def _handle_stt_start(self, request: Transcribe) -> None:
+        """Handle STT session start."""
+        # Cancel existing STT task if any
+        if self._stt_task and not self._stt_task.done():
+            old_queue = self._audio_queue
+            self._audio_queue = asyncio.Queue(
+                maxsize=self._config.get(CONF_AUDIO_BUFFER_SIZE, DEFAULT_AUDIO_BUFFER_SIZE)
+            )
+            self._audio_started.clear()
+            old_queue.put_nowait(None)
+            try:
+                await self._stt_task
+            except asyncio.CancelledError:
+                pass
+            self._audio_started.clear()
+
+        self._session_id = self._config.get("session_id", "local")
+
+        if not self._check_concurrency(self._session_id):
+            await self._send_event(
+                Error(
+                    code="max_concurrent_reached",
+                    message="Too many concurrent sessions",
                 ).event()
             )
             return
 
-        model = self._config.get(CONF_STT_MODEL, DEFAULT_STT_MODEL)
+        model = request.name or self._config.get(CONF_STT_MODEL, DEFAULT_STT_MODEL)
         enable_partial = self._config.get(CONF_ENABLE_PARTIAL, DEFAULT_ENABLE_PARTIAL)
         json_key_map = self._config.get(CONF_JSON_KEY_MAP)
 
-        _LOGGER.info(
-            "STT request session=%s model=%s",
-            request.session_id,
-            model,
-        )
+        _LOGGER.info("STT request model=%s", model)
 
-        # Start the STT processing task (runs concurrently with audio ingestion)
         self._stt_task = asyncio.create_task(
-            self._run_stt(model, enable_partial, json_key_map, request.session_id)
+            self._run_stt(model, enable_partial, json_key_map, self._session_id)
         )
 
     async def _handle_audio_start(self, audio_start: AudioStart) -> None:
@@ -370,10 +469,6 @@ class VLLMHandler:
 
     async def _handle_audio_stop(self) -> None:
         """Signal end of audio streaming for STT."""
-        await self._audio_queue.put(None)
-
-    async def _handle_stt_stop(self) -> None:
-        """Handle explicit STT stop (also signals end of audio)."""
         await self._audio_queue.put(None)
 
     async def _run_stt(
@@ -411,22 +506,14 @@ class VLLMHandler:
             ):
                 if result["is_final"]:
                     await self._send_event(
-                        Transcript(
-                            text=result["text"],
-                            session_id=session_id,
-                        ).event()
+                        Transcript(text=result["text"]).event()
                     )
                 elif enable_partial and result["partial"]:
                     await self._send_event(
-                        TextChunk(
-                            text=result["partial"],
-                            session_id=session_id,
-                        ).event()
+                        TranscriptChunk(text=result["partial"]).event()
                     )
 
-            await self._send_event(
-                SttStreamingStopped(session_id=session_id).event()
-            )
+            await self._send_event(TranscriptStop().event())
             _LOGGER.debug("STT streaming complete for session %s", session_id)
 
         except (TimeoutError, asyncio.TimeoutError):
@@ -435,7 +522,6 @@ class VLLMHandler:
                 Error(
                     code="vllm_timeout",
                     message="vLLM STT request timed out",
-                    session_id=session_id,
                 ).event()
             )
         except Exception:
@@ -444,7 +530,6 @@ class VLLMHandler:
                 Error(
                     code="vllm_error",
                     message="vLLM STT error",
-                    session_id=session_id,
                 ).event()
             )
         finally:
