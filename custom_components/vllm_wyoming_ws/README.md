@@ -28,7 +28,7 @@ vLLM / vLLM-Omni 0.20.0 推理服务器
 ### 方式 1：HACS（推荐）
 
 1. 打开 HACS → 集成 → 右上角三点菜单 → 自定义仓库
-2. 添加仓库地址：`https://github.com/kylin7226/vllm_wyoming_ws`
+2. 添加仓库地址：`https://github.com/kylin7226/wyoming-ws-bridge`
 3. 搜索 `vLLM Wyoming WS Bridge` 并安装
 4. 重启 Home Assistant
 
