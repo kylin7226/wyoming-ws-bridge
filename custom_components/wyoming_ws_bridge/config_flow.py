@@ -52,14 +52,8 @@ SERVICE_STT = "stt"
 
 STEP_SERVICE_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_SERVICE_TYPE): selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=[
-                    selector.SelectOptionDict(value=SERVICE_TTS, label="TTS（语音合成，文字 → 语音）"),
-                    selector.SelectOptionDict(value=SERVICE_STT, label="STT（语音识别，语音 → 文字）"),
-                ],
-                mode=selector.SelectSelectorMode.DROPDOWN,
-            )
+        vol.Required(CONF_SERVICE_TYPE, default=SERVICE_TTS): vol.In(
+            [SERVICE_TTS, SERVICE_STT]
         ),
     }
 )
@@ -78,12 +72,15 @@ class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Step 1: choose service type (TTS or STT)."""
         if user_input is not None:
-            self._service_type = user_input[CONF_SERVICE_TYPE]
+            self._service_type = user_input.get(CONF_SERVICE_TYPE, SERVICE_TTS)
             return await self.async_step_settings()
 
         return self.async_show_form(
             step_id="user",
             data_schema=STEP_SERVICE_SCHEMA,
+            description_placeholders={
+                "info": "Choose the voice service this instance will provide. Each instance provides only one service.",
+            },
         )
 
     async def async_step_settings(
