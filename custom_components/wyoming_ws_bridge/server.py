@@ -10,10 +10,12 @@ from typing import Any
 
 from wyoming.event import Event
 from wyoming.info import (
+    Artifact,
+    AsrModel,
+    AsrProgram,
     Attribution,
     Info,
-    SttInfo,
-    TtsInfo,
+    TtsProgram,
     TtsVoice,
 )
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
@@ -54,20 +56,35 @@ _active_sessions: dict[str, "VLLMHandler"] = {}
 def build_info_response(config: dict[str, Any]) -> Info:
     """Build the standard Wyoming InfoResponse based on service type."""
     service_type = config.get(CONF_SERVICE_TYPE, "tts")
-    return Info(
-        protocol_version=WYOMING_PROTOCOL_VERSION,
-        name=WYOMING_NAME,
-        version=WYOMING_VERSION,
-        attribution=Attribution(name="vLLM", url=""),
-        tts=TtsInfo(
-            voices=[TtsVoice(name="default", voice_id="default")],
-            languages=["zh", "en"],
-        ) if service_type == "tts" else None,
-        stt=SttInfo(
-            languages=["zh", "en"],
-        ) if service_type == "stt" else None,
-        satellite_compatible=True,
-    )
+    attribution = Attribution(name="vLLM", url="")
+    kwargs = dict(name=WYOMING_NAME, attribution=attribution,
+                  installed=True, description=None, version=WYOMING_VERSION)
+
+    if service_type == "tts":
+        return Info(tts=[
+            TtsProgram(
+                **kwargs,
+                voices=[TtsVoice(
+                    **kwargs,
+                    languages=["zh", "en"],
+                    speakers=None,
+                )],
+                supports_synthesize_streaming=True,
+            )
+        ])
+    else:
+        model_name = config.get(CONF_STT_MODEL, DEFAULT_STT_MODEL)
+        return Info(asr=[
+            AsrProgram(
+                **kwargs,
+                models=[AsrModel(
+                    **kwargs,
+                    name=model_name,
+                    languages=["zh", "en"],
+                )],
+                supports_transcript_streaming=True,
+            )
+        ])
 
 
 class VLLMHandler:
