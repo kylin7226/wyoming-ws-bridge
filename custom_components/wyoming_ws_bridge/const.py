@@ -36,6 +36,7 @@ DEFAULT_FAILURE_THRESHOLD = 3
 LATENCY_WARN_MS = 500  # threshold in ms to log a warning
 
 # ── Config entry keys ─────────────────────────────────────────────────────
+CONF_NAME = "name"
 CONF_WS_URL = "ws_url"
 CONF_CONNECT_TIMEOUT = "connect_timeout"
 CONF_SERVICE_TYPE = "service_type"

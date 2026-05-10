@@ -15,6 +15,7 @@
         "title": "连接与服务配置",
         "description": "配置 vLLM 连接地址、性能参数以及当前服务的具体设置。",
         "data": {
+          "name": "实例名称",
           "ws_url": "vLLM WebSocket 地址",
           "connect_timeout": "连接超时（秒）",
           "wyoming_host": "Wyoming TCP 监听地址",
@@ -62,6 +63,7 @@
         "title": "配置选项",
         "description": "修改连接和性能设置。当前服务类型：{service_type}。",
         "data": {
+          "name": "实例名称",
           "ws_url": "vLLM WebSocket 地址",
           "connect_timeout": "连接超时（秒）",
           "wyoming_host": "Wyoming TCP 监听地址",

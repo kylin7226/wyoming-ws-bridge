@@ -21,6 +21,7 @@ from .const import (
     CONF_HEALTH_MODE,
     CONF_JSON_KEY_MAP,
     CONF_MAX_CONCURRENT,
+    CONF_NAME,
     CONF_OUTPUT_SAMPLE_RATE,
     CONF_SERVICE_TYPE,
     CONF_STT_MODEL,
@@ -106,8 +107,12 @@ class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors[CONF_JSON_KEY_MAP] = "invalid_json_map"
 
             if not errors:
+                name = user_input.get(CONF_NAME, "").strip()
+                if not name:
+                    name = f"Wyoming WS Bridge ({self._service_type.upper()})"
                 result: dict[str, Any] = {
                     CONF_SERVICE_TYPE: self._service_type,
+                    CONF_NAME: name,
                     CONF_WS_URL: user_input[CONF_WS_URL],
                     CONF_CONNECT_TIMEOUT: user_input[CONF_CONNECT_TIMEOUT],
                     CONF_WYOMING_HOST: user_input[CONF_WYOMING_HOST],
@@ -127,12 +132,13 @@ class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
                     result[CONF_ENABLE_PARTIAL] = user_input[CONF_ENABLE_PARTIAL]
 
                 return self.async_create_entry(
-                    title=f"Wyoming WS Bridge ({self._service_type.upper()})",
+                    title=name,
                     data=result,
                 )
 
         schema = vol.Schema(
             {
+                vol.Required(CONF_NAME): str,
                 vol.Required(CONF_WS_URL, default=DEFAULT_WS_URL): selector.TextSelector(),
                 vol.Required(CONF_CONNECT_TIMEOUT, default=DEFAULT_CONNECT_TIMEOUT): selector.NumberSelector(
                     selector.NumberSelectorConfig(min=1, max=30, step=1, mode=selector.NumberSelectorMode.BOX)
@@ -217,8 +223,12 @@ class WyomingWSBridgeOptionsFlow(OptionsFlow):
                 errors[CONF_JSON_KEY_MAP] = "invalid_json_map"
 
             if not errors:
+                name = user_input.get(CONF_NAME, "").strip()
+                if not name:
+                    name = self.config_entry.title
                 merged: dict[str, Any] = {
                     CONF_SERVICE_TYPE: self.config_entry.data.get(CONF_SERVICE_TYPE, SERVICE_TTS),
+                    CONF_NAME: name,
                     CONF_WS_URL: user_input[CONF_WS_URL],
                     CONF_CONNECT_TIMEOUT: user_input[CONF_CONNECT_TIMEOUT],
                     CONF_WYOMING_HOST: user_input[CONF_WYOMING_HOST],
@@ -237,6 +247,8 @@ class WyomingWSBridgeOptionsFlow(OptionsFlow):
                     merged[CONF_STT_MODEL] = user_input[CONF_STT_MODEL]
                     merged[CONF_ENABLE_PARTIAL] = user_input[CONF_ENABLE_PARTIAL]
 
+                if name != self.config_entry.title:
+                    self.hass.config_entries.async_update_entry(self.config_entry, title=name)
                 return self.async_create_entry(data=merged)
 
         # Pre-fill with current values
@@ -247,6 +259,7 @@ class WyomingWSBridgeOptionsFlow(OptionsFlow):
 
         schema = vol.Schema(
             {
+                vol.Required(CONF_NAME, default=current.get(CONF_NAME, "")): str,
                 vol.Required(CONF_WS_URL, default=current.get(CONF_WS_URL, DEFAULT_WS_URL)): selector.TextSelector(),
                 vol.Required(CONF_CONNECT_TIMEOUT, default=current.get(CONF_CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT)): selector.NumberSelector(
                     selector.NumberSelectorConfig(min=1, max=30, step=1, mode=selector.NumberSelectorMode.BOX)

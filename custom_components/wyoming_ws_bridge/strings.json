@@ -15,6 +15,7 @@
         "title": "Connection & Service Settings",
         "description": "Configure vLLM connection, performance parameters, and settings for the selected service.",
         "data": {
+          "name": "Instance name",
           "ws_url": "vLLM WebSocket URL",
           "connect_timeout": "Connection timeout (seconds)",
           "wyoming_host": "Wyoming TCP listen address",
@@ -62,6 +63,7 @@
         "title": "Configure Options",
         "description": "Modify connection and performance settings. Current service type: {service_type}.",
         "data": {
+          "name": "Instance name",
           "ws_url": "vLLM WebSocket URL",
           "connect_timeout": "Connection timeout (seconds)",
           "wyoming_host": "Wyoming TCP listen address",
