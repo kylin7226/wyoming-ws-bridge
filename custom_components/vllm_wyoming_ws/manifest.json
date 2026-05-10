@@ -1,0 +1,14 @@
+{
+  "domain": "vllm_wyoming_ws",
+  "name": "vLLM Wyoming WS Bridge",
+  "codeowners": ["@kylin7226"],
+  "config_flow": true,
+  "dependencies": ["wyoming"],
+  "documentation": "https://github.com/kylin7226/vllm_wyoming_ws",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/kylin7226/vllm_wyoming_ws/issues",
+  "loggers": ["custom_components.vllm_wyoming_ws"],
+  "requirements": ["websockets>=13.0"],
+  "version": "1.0.0"
+}

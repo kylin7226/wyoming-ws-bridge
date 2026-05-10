@@ -1,0 +1,93 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "选择服务类型",
+        "description": "选择此实例要提供的语音服务。每个实例仅提供一种服务，可多次添加以分别配置 TTS 和 STT。",
+        "data": {
+          "service_type": "服务类型"
+        }
+      },
+      "settings": {
+        "title": "连接与服务配置",
+        "description": "配置 vLLM 连接地址、性能参数以及当前服务的具体设置。",
+        "data": {
+          "ws_url": "vLLM WebSocket 地址",
+          "connect_timeout": "连接超时（秒）",
+          "wyoming_host": "Wyoming TCP 监听地址",
+          "wyoming_port": "Wyoming TCP 监听端口",
+          "tts_model": "TTS 模型名称",
+          "output_sample_rate": "TTS 输出采样率（Hz）",
+          "stt_model": "STT 模型名称",
+          "enable_partial": "启用 STT 增量结果",
+          "max_concurrent": "最大并发会话数",
+          "audio_buffer_size": "音频缓冲队列深度",
+          "json_key_map": "JSON 键名映射（覆盖默认 vLLM 键名）",
+          "health_mode": "健康检查模式",
+          "health_interval": "健康检查间隔（秒）",
+          "failure_threshold": "标记离线前的连续失败次数"
+        },
+        "data_description": {
+          "ws_url": "vLLM 服务器的 WebSocket 基础地址，例如 ws://192.168.1.100:8000/v1",
+          "connect_timeout": "WebSocket 握手超时时间（秒）",
+          "wyoming_host": "Wyoming TCP 服务器绑定地址（0.0.0.0 表示所有接口）",
+          "wyoming_port": "Wyoming 服务器端口（HA Assist Pipeline 连接此端口）",
+          "tts_model": "vLLM 中注册的文转语音模型名称",
+          "output_sample_rate": "TTS 输出采样率，需与 HA 播放器匹配",
+          "stt_model": "vLLM 中注册的语音转文字模型名称",
+          "enable_partial": "在 STT 结果可用时实时推送增量结果",
+          "max_concurrent": "同时进行的语音会话最大数量",
+          "audio_buffer_size": "STT 音频块队列深度，用于背压控制",
+          "json_key_map": "JSON 对象，用于覆盖默认 vLLM 请求/响应键名",
+          "health_mode": "使用 WS 握手测试或 HTTP GET /v1/models 进行健康检查",
+          "health_interval": "连续健康探测之间的秒数",
+          "failure_threshold": "连续失败多少次后标记为离线"
+        }
+      }
+    },
+    "error": {
+      "invalid_json_map": "键名映射 JSON 格式无效"
+    },
+    "abort": {
+      "already_configured": "vLLM Wyoming WS 桥接已配置"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "配置选项",
+        "description": "修改连接和性能设置。当前服务类型：{service_type}。",
+        "data": {
+          "ws_url": "vLLM WebSocket 地址",
+          "connect_timeout": "连接超时（秒）",
+          "wyoming_host": "Wyoming TCP 监听地址",
+          "wyoming_port": "Wyoming TCP 监听端口",
+          "tts_model": "TTS 模型名称",
+          "output_sample_rate": "TTS 输出采样率（Hz）",
+          "stt_model": "STT 模型名称",
+          "enable_partial": "启用 STT 增量结果",
+          "max_concurrent": "最大并发会话数",
+          "audio_buffer_size": "音频缓冲队列深度",
+          "json_key_map": "JSON 键名映射（覆盖默认 vLLM 键名）",
+          "health_mode": "健康检查模式",
+          "health_interval": "健康检查间隔（秒）",
+          "failure_threshold": "标记离线前的连续失败次数"
+        }
+      }
+    },
+    "error": {
+      "invalid_json_map": "键名映射 JSON 格式无效"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "vllm_status": {
+        "name": "vLLM Wyoming WS 状态",
+        "state": {
+          "on": "在线",
+          "off": "离线或降级"
+        }
+      }
+    }
+  }
+}
