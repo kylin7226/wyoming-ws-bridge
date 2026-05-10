@@ -148,7 +148,7 @@ class WyomingWSBridgeConfigFlow(ConfigFlow, domain=DOMAIN):
                     selector.NumberSelectorConfig(min=16, max=256, step=1, mode=selector.NumberSelectorMode.BOX)
                 ),
                 vol.Optional(CONF_JSON_KEY_MAP, default="{}"): selector.TextSelector(
-                    selector.TextSelectorConfig(mode=selector.TextSelectorMode.TEXTAREA)
+                    selector.TextSelectorConfig(mode=selector.TextSelectorType.TEXTAREA)
                 ),
                 vol.Required(CONF_HEALTH_MODE, default=DEFAULT_HEALTH_MODE): selector.SelectSelector(
                     selector.SelectSelectorConfig(
@@ -264,7 +264,7 @@ class WyomingWSBridgeOptionsFlow(OptionsFlow):
                     selector.NumberSelectorConfig(min=16, max=256, step=1, mode=selector.NumberSelectorMode.BOX)
                 ),
                 vol.Optional(CONF_JSON_KEY_MAP, default=json_map_str): selector.TextSelector(
-                    selector.TextSelectorConfig(mode=selector.TextSelectorMode.TEXTAREA)
+                    selector.TextSelectorConfig(mode=selector.TextSelectorType.TEXTAREA)
                 ),
                 vol.Required(CONF_HEALTH_MODE, default=current.get(CONF_HEALTH_MODE, DEFAULT_HEALTH_MODE)): selector.SelectSelector(
                     selector.SelectSelectorConfig(
